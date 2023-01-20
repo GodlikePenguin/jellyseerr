@@ -4,20 +4,25 @@ import NetworkSlider from '@app/components/Discover/NetworkSlider';
 import StudioSlider from '@app/components/Discover/StudioSlider';
 import TvGenreSlider from '@app/components/Discover/TvGenreSlider';
 import MediaSlider from '@app/components/MediaSlider';
+import RequestCard from '@app/components/RequestCard';
 import Slider from '@app/components/Slider';
 import TmdbTitleCard from '@app/components/TitleCard/TmdbTitleCard';
-import { UserType, useUser } from '@app/hooks/useUser';
+import { Permission, UserType, useUser } from '@app/hooks/useUser';
 import { ArrowCircleRightIcon } from '@heroicons/react/outline';
 import type { WatchlistItem } from '@server/interfaces/api/discoverInterfaces';
+import type { MediaResultsResponse } from '@server/interfaces/api/mediaInterfaces';
+import type { RequestResultsResponse } from '@server/interfaces/api/requestInterfaces';
 import Link from 'next/link';
 import { defineMessages, useIntl } from 'react-intl';
 import useSWR from 'swr';
 
 const messages = defineMessages({
-  discover: 'Discover',
+  available: 'Available',
+  recentrequests: 'Recent Requests',
   popularmovies: 'Popular Movies',
   populartv: 'Popular Series',
   upcomingtv: 'Upcoming Series',
+  recentlyAdded: 'Local Media',
   upcoming: 'Upcoming Movies',
   trending: 'Trending',
   plexwatchlist: 'Your Plex Watchlist',
@@ -25,9 +30,22 @@ const messages = defineMessages({
     'Media added to your <PlexWatchlistSupportLink>Plex Watchlist</PlexWatchlistSupportLink> will appear here.',
 });
 
-const Discover = () => {
+const Available = () => {
   const intl = useIntl();
-  const { user } = useUser();
+  const { user, hasPermission } = useUser();
+
+  const { data: media, error: mediaError } = useSWR<MediaResultsResponse>(
+    '/api/v1/media?filter=allavailable&take=20&sort=mediaAdded',
+    { revalidateOnMount: true }
+  );
+
+  const { data: requests, error: requestError } =
+    useSWR<RequestResultsResponse>(
+      '/api/v1/request?filter=all&take=10&sort=modified&skip=0',
+      {
+        revalidateOnMount: true,
+      }
+    );
 
   const { data: watchlistItems, error: watchlistError } = useSWR<{
     page: number;
@@ -40,7 +58,59 @@ const Discover = () => {
 
   return (
     <>
-      <PageTitle title={intl.formatMessage(messages.discover)} />
+      <PageTitle title={intl.formatMessage(messages.available)} />
+      {(!media || !!media.results.length) &&
+        !mediaError &&
+        hasPermission([Permission.MANAGE_REQUESTS, Permission.RECENT_VIEW], {
+          type: 'or',
+        }) && (
+          <>
+            <div className="slider-header">
+              <Link href="/local">
+                <a className="slider-title">
+                  <span>{intl.formatMessage(messages.recentlyAdded)}</span>
+                  <ArrowCircleRightIcon />
+                </a>
+              </Link>
+            </div>
+            <Slider
+              sliderKey="media"
+              isLoading={!media}
+              items={(media?.results ?? []).map((item) => (
+                <TmdbTitleCard
+                  key={`media-slider-item-${item.id}`}
+                  id={item.id}
+                  tmdbId={item.tmdbId}
+                  tvdbId={item.tvdbId}
+                  type={item.mediaType}
+                />
+              ))}
+            />
+          </>
+        )}
+      {(!requests || !!requests.results.length) && !requestError && (
+        <>
+          <div className="slider-header">
+            <Link href="/requests?filter=all">
+              <a className="slider-title">
+                <span>{intl.formatMessage(messages.recentrequests)}</span>
+                <ArrowCircleRightIcon />
+              </a>
+            </Link>
+          </div>
+          <Slider
+            sliderKey="requests"
+            isLoading={!requests}
+            items={(requests?.results ?? []).map((request) => (
+              <RequestCard
+                key={`request-slider-item-${request.id}`}
+                request={request}
+              />
+            ))}
+            placeholder={<RequestCard.Placeholder />}
+          />
+        </>
+      )}
       {user?.userType === UserType.PLEX &&
         (!watchlistItems ||
           !!watchlistItems.results.length ||
@@ -121,4 +191,4 @@ const Discover = () => {
   );
 };
 
-export default Discover;
+export default Available;

@@ -7,6 +7,7 @@ import {
   ClockIcon,
   CogIcon,
   ExclamationIcon,
+  LightningBoltIcon,
   SparklesIcon,
   UsersIcon,
   XIcon,
@@ -17,6 +18,7 @@ import { Fragment, useRef } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
 
 const messages = defineMessages({
+  available: 'Available',
   dashboard: 'Discover',
   requests: 'Requests',
   issues: 'Issues',
@@ -43,9 +45,15 @@ interface SidebarLinkProps {
 const SidebarLinks: SidebarLinkProps[] = [
   {
     href: '/',
+    messagesKey: 'available',
+    svgIcon: <LightningBoltIcon className="mr-3 h-6 w-6" />,
+    activeRegExp: /^\/$/,
+  },
+  {
+    href: '/discover',
     messagesKey: 'dashboard',
     svgIcon: <SparklesIcon className="mr-3 h-6 w-6" />,
-    activeRegExp: /^\/(discover\/?(movies|tv)?)?$/,
+    activeRegExp: /^\/discover(\/?(movies|tv)?)?$/,
   },
   {
     href: '/requests',
