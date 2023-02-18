@@ -47,13 +47,13 @@ const SidebarLinks: SidebarLinkProps[] = [
     href: '/',
     messagesKey: 'available',
     svgIcon: <LightningBoltIcon className="mr-3 h-6 w-6" />,
-    activeRegExp: /^\/$/,
+    activeRegExp: /(^\/$|^\/available)/,
   },
   {
     href: '/discover',
     messagesKey: 'dashboard',
     svgIcon: <SparklesIcon className="mr-3 h-6 w-6" />,
-    activeRegExp: /^\/discover(\/?(movies|tv)?)?$/,
+    activeRegExp: /^\/discover/,
   },
   {
     href: '/requests',

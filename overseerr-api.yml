@@ -139,6 +139,24 @@ components:
         defaultPermissions:
           type: number
           example: 32
+    NetworkSettings:
+      type: object
+      properties:
+        disableRequestsForAvailableNetworks:
+          type: boolean
+        available:
+          type: object
+          properties:
+            netflix:
+              type: boolean
+            primeVideo:
+              type: boolean
+            appleTv:
+              type: boolean
+            disneyPlus:
+              type: boolean
+            hulu:
+              type: boolean
     PlexLibrary:
       type: object
       properties:
@@ -3234,6 +3252,37 @@ paths:
       responses:
         '204':
           description: Test notification attempted
+  /settings/networks:
+    get:
+      summary: Get network settings
+      description: Retrieves all network settings in a JSON object.
+      tags:
+        - settings
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NetworkSettings'
+    post:
+      summary: Update network settings
+      description: Updates network settings with the provided values.
+      tags:
+        - settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NetworkSettings'
+      responses:
+        '200':
+          description: 'Values were sucessfully updated'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NetworkSettings'
   /settings/about:
     get:
       summary: Get server stats

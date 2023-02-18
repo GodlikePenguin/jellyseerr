@@ -1,3 +1,4 @@
+import type { Networks } from '@server/constants/networks';
 import { MediaServerType } from '@server/constants/server';
 import { randomUUID } from 'crypto';
 import fs from 'fs';
@@ -88,6 +89,11 @@ export interface SonarrSettings extends DVRSettings {
 interface Quota {
   quotaLimit?: number;
   quotaDays?: number;
+}
+
+export interface NetworkSettings {
+  disableRequestsForAvailableNetworks: boolean;
+  available: Record<keyof typeof Networks, boolean>;
 }
 
 export interface MainSettings {
@@ -279,6 +285,7 @@ interface AllSettings {
   public: PublicSettings;
   notifications: NotificationSettings;
   jobs: Record<JobId, JobSettings>;
+  networks: NetworkSettings;
 }
 
 const SETTINGS_PATH = process.env.CONFIG_DIRECTORY
@@ -451,6 +458,17 @@ class Settings {
           schedule: '0 0 5 * * *',
         },
       },
+      networks: {
+        disableRequestsForAvailableNetworks: false,
+        available: {
+          netflix: false,
+          primeVideo: false,
+          appleTv: false,
+          disneyPlus: false,
+          hulu: false,
+          hbo: false,
+        },
+      },
     };
     if (initialSettings) {
       this.data = merge(this.data, initialSettings);
@@ -560,6 +578,14 @@ class Settings {
 
   set jobs(data: Record<JobId, JobSettings>) {
     this.data.jobs = data;
+  }
+
+  get networks(): NetworkSettings {
+    return this.data.networks;
+  }
+
+  set networks(data: NetworkSettings) {
+    this.data.networks = data;
   }
 
   get clientId(): string {

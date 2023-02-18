@@ -19,12 +19,12 @@ import useSWR from 'swr';
 const messages = defineMessages({
   available: 'Available',
   recentrequests: 'Recent Requests',
-  popularmovies: 'Popular Movies',
-  populartv: 'Popular Series',
-  upcomingtv: 'Upcoming Series',
+  popularmovies: 'Popular Movies on your Networks',
+  populartv: 'Popular Series on your Networks',
+  upcomingtv: 'Upcoming Series on your Networks',
   recentlyAdded: 'Local Media',
-  upcoming: 'Upcoming Movies',
-  trending: 'Trending',
+  upcoming: 'Upcoming Movies on your Networks',
+  trending: 'Trending on your Networks',
   plexwatchlist: 'Your Plex Watchlist',
   emptywatchlist:
     'Media added to your <PlexWatchlistSupportLink>Plex Watchlist</PlexWatchlistSupportLink> will appear here.',
@@ -66,7 +66,7 @@ const Available = () => {
         }) && (
           <>
             <div className="slider-header">
-              <Link href="/local">
+              <Link href="/available/local">
                 <a className="slider-title">
                   <span>{intl.formatMessage(messages.recentlyAdded)}</span>
                   <ArrowCircleRightIcon />
@@ -157,19 +157,19 @@ const Available = () => {
         sliderKey="trending"
         title={intl.formatMessage(messages.trending)}
         url="/api/v1/discover/trending"
-        linkUrl="/discover/trending"
+        linkUrl="/available/network/trending"
       />
       <MediaSlider
         sliderKey="popular-movies"
         title={intl.formatMessage(messages.popularmovies)}
         url="/api/v1/discover/movies"
-        linkUrl="/discover/movies"
+        linkUrl="/available/network/movies"
       />
       <MovieGenreSlider />
       <MediaSlider
         sliderKey="upcoming"
         title={intl.formatMessage(messages.upcoming)}
-        linkUrl="/discover/movies/upcoming"
+        linkUrl="/available/network/movies/upcoming"
         url="/api/v1/discover/movies/upcoming"
       />
       <StudioSlider />
@@ -177,14 +177,14 @@ const Available = () => {
         sliderKey="popular-tv"
         title={intl.formatMessage(messages.populartv)}
         url="/api/v1/discover/tv"
-        linkUrl="/discover/tv"
+        linkUrl="/available/network/tv"
       />
       <TvGenreSlider />
       <MediaSlider
         sliderKey="upcoming-tv"
         title={intl.formatMessage(messages.upcomingtv)}
         url="/api/v1/discover/tv/upcoming"
-        linkUrl="/discover/tv/upcoming"
+        linkUrl="/available/network/tv/upcoming"
       />
       <NetworkSlider />
     </>

@@ -42,7 +42,9 @@ import type { RTRating } from '@server/api/rottentomatoes';
 import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
 import { IssueStatus } from '@server/constants/issue';
 import { MediaRequestStatus, MediaStatus } from '@server/constants/media';
+import { Networks } from '@server/constants/networks';
 import { MediaServerType } from '@server/constants/server';
+import type { NetworkSettings } from '@server/lib/settings';
 import type { Crew } from '@server/models/common';
 import type { TvDetails as TvDetailsType } from '@server/models/Tv';
 import { hasFlag } from 'country-flag-icons';
@@ -104,6 +106,10 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
   );
   const [showIssueModal, setShowIssueModal] = useState(false);
   const { publicRuntimeConfig } = getConfig();
+
+  const { data: networkData } = useSWR<NetworkSettings>(
+    '/api/v1/settings/networks'
+  );
 
   const {
     data,
@@ -170,6 +176,38 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
     });
   }
 
+  const region = user?.settings?.region
+    ? user.settings.region
+    : settings.currentSettings.region
+    ? settings.currentSettings.region
+    : 'US';
+  const seriesAttributes: React.ReactNode[] = [];
+
+  const streamingProviders =
+    data?.watchProviders?.find((provider) => provider.iso_3166_1 === region)
+      ?.flatrate ?? [];
+
+  const availableNetworkIds = Object.entries(networkData?.available ?? [])
+    .filter(([_, value]) => value)
+    .map(([key, _]) => key);
+  const availableProviders = Object.entries(Networks)
+    .filter(([networkId, _]) => availableNetworkIds.includes(networkId))
+    .map(([_, networks]) => networks);
+  const playOn =
+    availableProviders.filter((availableProvider) =>
+      availableProvider.providerKeys.some((provider) =>
+        streamingProviders.map((s) => s.name).includes(provider)
+      )
+    )[0] ?? undefined;
+
+  if (networkData?.disableRequestsForAvailableNetworks && playOn != null) {
+    mediaLinks.unshift({
+      text: `Watch on ${playOn.displayName}`,
+      url: playOn.searchUrl + data.name,
+      svg: <PlayIcon />,
+    });
+  }
+
   const trailerUrl = data.relatedVideos
     ?.filter((r) => r.type === 'Trailer')
     .sort((a, b) => a.size - b.size)
@@ -182,13 +220,6 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
       svg: <FilmIcon />,
     });
   }
-
-  const region = user?.settings?.region
-    ? user.settings.region
-    : settings.currentSettings.region
-    ? settings.currentSettings.region
-    : 'US';
-  const seriesAttributes: React.ReactNode[] = [];
 
   const contentRating = data.contentRatings.results.find(
     (r) => r.iso_3166_1 === region
@@ -247,10 +278,6 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
           season.status4k === MediaStatus.PARTIALLY_AVAILABLE
       ) ?? []
     ).length;
-
-  const streamingProviders =
-    data?.watchProviders?.find((provider) => provider.iso_3166_1 === region)
-      ?.flatrate ?? [];
 
   function getAvalaibleMediaServerName() {
     if (publicRuntimeConfig.JELLYFIN_TYPE === 'emby') {

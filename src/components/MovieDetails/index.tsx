@@ -41,7 +41,9 @@ import {
 import type { RTRating } from '@server/api/rottentomatoes';
 import { IssueStatus } from '@server/constants/issue';
 import { MediaStatus } from '@server/constants/media';
+import { Networks } from '@server/constants/networks';
 import { MediaServerType } from '@server/constants/server';
+import type { NetworkSettings } from '@server/lib/settings';
 import type { MovieDetails as MovieDetailsType } from '@server/models/Movie';
 import { hasFlag } from 'country-flag-icons';
 import 'country-flag-icons/3x2/flags.css';
@@ -109,6 +111,10 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
   const [showIssueModal, setShowIssueModal] = useState(false);
   const { publicRuntimeConfig } = getConfig();
 
+  const { data: networkData } = useSWR<NetworkSettings>(
+    '/api/v1/settings/networks'
+  );
+
   const {
     data,
     error,
@@ -174,6 +180,38 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
       svg: <PlayIcon />,
     });
   }
+
+  const region = user?.settings?.region
+    ? user.settings.region
+    : settings.currentSettings.region
+    ? settings.currentSettings.region
+    : 'US';
+
+  const streamingProviders =
+    data?.watchProviders?.find((provider) => provider.iso_3166_1 === region)
+      ?.flatrate ?? [];
+
+  const availableNetworkIds = Object.entries(networkData?.available ?? [])
+    .filter(([_, value]) => value)
+    .map(([key, _]) => key);
+  const availableProviders = Object.entries(Networks)
+    .filter(([networkId, _]) => availableNetworkIds.includes(networkId))
+    .map(([_, networks]) => networks);
+  const playOn =
+    availableProviders.filter((availableProvider) =>
+      availableProvider.providerKeys.some((provider) =>
+        streamingProviders.map((s) => s.name).includes(provider)
+      )
+    )[0] ?? undefined;
+
+  if (networkData?.disableRequestsForAvailableNetworks && playOn != null) {
+    mediaLinks.unshift({
+      text: `Watch on ${playOn.displayName}`,
+      url: playOn.searchUrl + data.title,
+      svg: <PlayIcon />,
+    });
+  }
+
   const trailerUrl = data.relatedVideos
     ?.filter((r) => r.type === 'Trailer')
     .sort((a, b) => a.size - b.size)
@@ -186,12 +224,6 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
       svg: <FilmIcon />,
     });
   }
-
-  const region = user?.settings?.region
-    ? user.settings.region
-    : settings.currentSettings.region
-    ? settings.currentSettings.region
-    : 'US';
 
   const releases = data.releases.results.find(
     (r) => r.iso_3166_1 === region
@@ -242,10 +274,6 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
         ))
     );
   }
-
-  const streamingProviders =
-    data?.watchProviders?.find((provider) => provider.iso_3166_1 === region)
-      ?.flatrate ?? [];
 
   function getAvalaibleMediaServerName() {
     if (publicRuntimeConfig.JELLYFIN_TYPE === 'emby') {

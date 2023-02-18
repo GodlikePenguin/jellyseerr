@@ -729,4 +729,19 @@ settingsRoutes.get('/about', async (req, res) => {
   } as SettingsAboutResponse);
 });
 
+settingsRoutes.get('/networks', (req, res) => {
+  const settings = getSettings();
+
+  res.status(200).json(settings.networks);
+});
+
+settingsRoutes.post('/networks', (req, res) => {
+  const settings = getSettings();
+
+  settings.networks = merge(settings.networks, req.body);
+  settings.save();
+
+  return res.status(200).json(settings.main);
+});
+
 export default settingsRoutes;
